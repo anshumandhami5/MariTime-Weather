@@ -24,6 +24,19 @@ const WEATHER_CHANGE_THRESHOLD = {
 };
 
 // haversine omitted for brevity...
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371; // km
+  const toRad = deg => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
 
 function hasWeatherChanged(oldData, newData) {
   if (!oldData || !newData) return true;
@@ -128,6 +141,26 @@ app.post("/get-data", async (req, res) => {
     ml_features: features,
     speed_prediction: prediction, // null if ML failed
   });
+});
+
+app.post("/forecast", async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: "Latitude and Longitude are required" });
+    }
+
+    // Open-Meteo 10-day forecast API
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max&forecast_days=10&timezone=auto`;
+
+    const response = await axios.get(url);
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching forecast:", error.message);
+    res.status(500).json({ error: "Failed to fetch forecast data" });
+  }
 });
 
 app.listen(4000, () => console.log("Backend running on port 4000"));
