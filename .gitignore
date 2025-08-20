@@ -1,0 +1,66 @@
+# -------------------------
+# OS / Editor junk
+# -------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.log
+
+# VSCode / JetBrains
+.vscode/
+.idea/
+
+# -------------------------
+# Environment / Secrets
+# -------------------------
+.env
+*.env.local
+.env.*
+!*.example   # keep example envs
+
+# -------------------------
+# Python / ML Large Files
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.ipynb_checkpoints/
+*.pickle
+*.h5
+*.hdf5
+*.joblib
+*.pt
+*.pth
+*.onnx
+
+# -------------------------
+# Node / Frontend Global
+# -------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# -------------------------
+# Build & Dist
+# -------------------------
+dist/
+build/
+out/
+coverage/
+
+# -------------------------
+# Misc
+# -------------------------
+*.bak
+*.old
+*.orig
+*.rej
+
+# Logs
+logs/
+*.log
