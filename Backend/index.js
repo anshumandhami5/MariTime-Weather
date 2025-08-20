@@ -51,7 +51,7 @@ function hasWeatherChanged(oldData, newData) {
   return false;
 }
 
-function extractFeatures(apiData) {
+function extractFeatures(apiData, marineData) {
   return {
     temp: apiData?.temperature_2m ?? null,
     pressure: apiData?.surface_pressure ?? null,
@@ -61,6 +61,21 @@ function extractFeatures(apiData) {
     wind_gusts: apiData?.windgusts_10m ?? null,
     showers: apiData?.showers ?? null,
     visibility: apiData?.visibility ?? null,
+
+    // Marine features
+    sea_surface_temp: marineData?.sea_surface_temperature ?? null,
+    wave_height: marineData?.wave_height ?? null,
+  };
+}
+
+function mlInputFilter(features) {
+  return {
+    wind_direction: features.wind_direction,
+    pressure: features.pressure,
+    wind_speed: features.wind_speed,
+    wave_height: features.wave_height,
+    wind_gusts: features.wind_gusts,
+    visibility: features.visibility,
   };
 }
 
@@ -74,16 +89,15 @@ app.post("/get-data", async (req, res) => {
     : false;
 
   let features,
-    prediction = null,
-    weatherData;
+    recommended_speed = null;
 
   if (isCacheValid && !movedFar) {
     console.log("✅ Using cached weather + prediction");
-    ({ features, prediction, raw: weatherData } = cached);
+    ({ features, recommended_speed } = cached);
   } else {
     console.log("🌐 Fetching fresh weather from Open-Meteo");
     try {
-      const params = [
+      const weatherParams = [
         "temperature_2m",
         "relativehumidity_2m",
         "surface_pressure",
@@ -94,38 +108,46 @@ app.post("/get-data", async (req, res) => {
         "visibility",
       ].join(",");
 
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${params}&windspeed_unit=ms&timeformat=unixtime`;
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${weatherParams}&windspeed_unit=ms&timeformat=unixtime`;
 
-      const response = await axios.get(url);
-      const current =
-        response.data.current_weather || response.data.current;
+      const marineParams = ["wave_height", "sea_surface_temperature"].join(",");
+      const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=${marineParams}&timeformat=unixtime`;
 
-      features = extractFeatures(current);
+      const [weatherRes, marineRes] = await Promise.all([
+        axios.get(weatherUrl),
+        axios.get(marineUrl),
+      ]);
+
+      const currentWeather =
+        weatherRes.data.current_weather || weatherRes.data.current;
+      const currentMarine =
+        marineRes.data.current_weather || marineRes.data.current;
+
+      features = extractFeatures(currentWeather, currentMarine);
 
       let needNewPrediction = true;
       if (cached && !hasWeatherChanged(cached.features, features)) {
         console.log("Reusing old ML prediction");
-        prediction = cached.prediction;
+        recommended_speed = cached.recommended_speed;
         needNewPrediction = false;
       }
 
       if (needNewPrediction) {
         try {
           const mlRes = await axios.post("http://localhost:5000/predict", {
-            features,
+            features: mlInputFilter(features),
           });
-          prediction = mlRes.data.prediction;
+          recommended_speed = mlRes.data.prediction;
         } catch (mlErr) {
           console.warn("⚠️ ML service not available, continuing without prediction");
-          prediction = null;
+          recommended_speed = null;
         }
       }
 
-      weatherData = current;
+      
       WEATHER_CACHE[key] = {
-        raw: weatherData,
         features,
-        prediction,
+        recommended_speed,
         lat,
         lon,
         timestamp: Date.now(),
@@ -137,9 +159,8 @@ app.post("/get-data", async (req, res) => {
   }
 
   res.json({
-    weather: weatherData,
-    ml_features: features,
-    speed_prediction: prediction, // null if ML failed
+    ...features,
+    recommended_speed,
   });
 });
 
