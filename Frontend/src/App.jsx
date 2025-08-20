@@ -1,16 +1,21 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
+import Home from "./pagess/Home";
 
-function App() {
-  const [count, setCount] = useState(0)
 
+
+export default function App() {
   return (
-    <>
-      <h1 class="text-3xl font-bold underline">Landing Page</h1>
-    </>
-  )
+    <Router>
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-blue-100">
+        <Header />
+        <main className="flex-1 p-6">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  );
 }
-
-export default App
