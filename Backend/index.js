@@ -177,7 +177,26 @@ app.post("/forecast", async (req, res) => {
 
     const response = await axios.get(url);
 
-    res.json(response.data);
+    const { daily } = response.data;
+
+    // Convert into array of objects (easy for frontend)
+    const formattedData = daily.time.map((date, index) => ({
+      date,
+      temp_max: daily.temperature_2m_max[index],
+      temp_min: daily.temperature_2m_min[index],
+      precipitation: daily.precipitation_sum[index],
+      windspeed_max: daily.windspeed_10m_max[index],
+    }));
+
+    res.json({
+      location: {
+        latitude: response.data.latitude,
+        longitude: response.data.longitude,
+        timezone: response.data.timezone,
+      },
+      forecast: formattedData,
+    });
+    
   } catch (error) {
     console.error("Error fetching forecast:", error.message);
     res.status(500).json({ error: "Failed to fetch forecast data" });
