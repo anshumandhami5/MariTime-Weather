@@ -1,0 +1,256 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import axios from "axios";
+
+// --- SVG Icon Components ---
+
+const ThermometerIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+  </svg>
+);
+
+const GaugeIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" />
+  </svg>
+);
+
+const DropletIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+  </svg>
+);
+
+const WindIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" /><path d="M9.6 4.6A2 2 0 1 1 11 8H2" /><path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+  </svg>
+);
+
+const CompassIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+
+const CloudRainIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M16 14v6" /><path d="M8 14v6" /><path d="M12 16v6" />
+  </svg>
+);
+
+const EyeIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const WavesIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+  </svg>
+);
+
+const SpeedometerIcon = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 12v-4" />
+        <path d="M12 12l3.5-3.5" />
+        <path d="M20.9 12A9 9 0 1 1 3.1 12" />
+    </svg>
+);
+
+// --- Reusable Weather Card Component ---
+const WeatherCard = ({ icon, title, value, unit, description }) => (
+  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 hover:bg-white/20 hover:scale-105">
+    <div>
+      <div className="flex items-center gap-4">
+        <div className="text-teal-300">{icon}</div>
+        <h3 className="text-lg font-medium text-gray-200">{title}</h3>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-5xl font-bold text-white tracking-tighter">
+          {value ?? "--"}
+          <span className="text-2xl font-light text-gray-300 ml-2">{unit}</span>
+        </p>
+      </div>
+    </div>
+    {description && <p className="text-center text-sm text-gray-400 mt-4">{description}</p>}
+  </div>
+);
+
+// --- Special Card for Recommended Speed ---
+const RecommendedSpeedCard = ({ speed, reason }) => (
+  <div className="bg-gradient-to-br from-teal-400/20 to-blue-500/20 backdrop-blur-lg rounded-2xl p-6 flex flex-col justify-center items-center text-center ring-1 ring-teal-300/50 transition-all duration-300 hover:ring-teal-300 hover:scale-105 col-span-1 md:col-span-2 lg:col-span-1">
+    <div className="text-teal-200 mb-4">
+      <SpeedometerIcon className="w-12 h-12" />
+    </div>
+    <h3 className="text-lg font-medium text-gray-200 mb-2">Recommended Speed</h3>
+    <p className="text-6xl font-bold text-white tracking-tighter">
+      {speed ?? "--"}
+      <span className="text-2xl font-light text-gray-300 ml-2">knots</span>
+    </p>
+    <p className="text-sm text-gray-400 mt-4">{reason ?? "Optimal conditions for travel."}</p>
+  </div>
+);
+
+// --- Main Dashboard Component ---
+export default function Dashboard() {
+  const [location, setLocation] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState('');
+  const intervalRef = useRef(null);
+
+  // --- Backend Fetch ---
+  const fetchWeatherData = useCallback(async (lat, lon) => {
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/get-data`, {
+        lat,
+        lon
+      });
+
+      // Map backend keys → frontend format
+      const d = res.data;
+      const mappedData = {
+        temperature: d.temp?.toFixed ? d.temp.toFixed(1) : d.temp,
+        pressure: d.pressure,
+        humidity: d.humidity,
+        windSpeed: d.wind_speed,
+        windDirection: d.wind_direction,
+        windGusts: d.wind_gusts,
+        showers: d.showers,
+        visibility: d.visibility ? (d.visibility / 1000).toFixed(1) : null, // convert m → km
+        seaSurfaceTemp: d.sea_surface_temp,
+        waveHeight: d.wave_height,
+        recommendedSpeed: d.recommended_speed,
+        recommendationReason: "Based on current conditions."
+      };
+
+      return { data: mappedData };
+    } catch (err) {
+      console.error("❌ Error fetching weather:", err);
+      return { error: "Failed to fetch weather data from backend." };
+    }
+  }, []);
+
+  // --- Geolocation Fetching Logic ---
+  const getLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser.');
+      setIsFetching(false);
+      return;
+    }
+
+    setError('');
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lon: longitude });
+        const { data, error } = await fetchWeatherData(latitude, longitude);
+        if (data) {
+          setWeatherData(data);
+        } else {
+          setError(error || 'An unknown error occurred.');
+        }
+      },
+      () => {
+        setError('Unable to retrieve your location. Please enable location services.');
+        setIsFetching(false);
+      }
+    );
+  }, [fetchWeatherData]);
+
+  // --- Effect to manage the fetching interval ---
+  useEffect(() => {
+    if (isFetching) {
+      getLocation(); // Fetch immediately
+      intervalRef.current = setInterval(getLocation, 10000); // every 10s
+    } else {
+      clearInterval(intervalRef.current);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [isFetching, getLocation]);
+
+  const handleFetchClick = () => {
+    setIsFetching(prev => !prev);
+    if (!isFetching) {
+      setWeatherData(null); // reset
+      setLocation(null);
+    }
+  };
+
+  // --- Weather Cards Config ---
+  const weatherCards = [
+    { id: 'temp', icon: <ThermometerIcon className="w-8 h-8"/>, title: 'Temperature', value: weatherData?.temperature, unit: '°C' },
+    { id: 'pressure', icon: <GaugeIcon className="w-8 h-8"/>, title: 'Pressure', value: weatherData?.pressure, unit: 'hPa' },
+    { id: 'humidity', icon: <DropletIcon className="w-8 h-8"/>, title: 'Humidity', value: weatherData?.humidity, unit: '%' },
+    { id: 'windSpeed', icon: <WindIcon className="w-8 h-8"/>, title: 'Wind Speed', value: weatherData?.windSpeed, unit: 'm/s' },
+    { id: 'windDir', icon: <CompassIcon className="w-8 h-8"/>, title: 'Wind Direction', value: weatherData?.windDirection, unit: '°' },
+    { id: 'windGusts', icon: <WindIcon className="w-8 h-8 stroke-red-400"/>, title: 'Wind Gusts', value: weatherData?.windGusts, unit: 'm/s' },
+    { id: 'showers', icon: <CloudRainIcon className="w-8 h-8"/>, title: 'Showers', value: weatherData?.showers, unit: 'mm' },
+    { id: 'visibility', icon: <EyeIcon className="w-8 h-8"/>, title: 'Visibility', value: weatherData?.visibility, unit: 'km' },
+    { id: 'seaTemp', icon: <ThermometerIcon className="w-8 h-8"/>, title: 'Sea Surface Temp', value: weatherData?.seaSurfaceTemp, unit: '°C' },
+    { id: 'waveHeight', icon: <WavesIcon className="w-8 h-8"/>, title: 'Wave Height', value: weatherData?.waveHeight, unit: 'm' },
+  ];
+
+  return (
+    <div className="min-h-screen w-full bg-gray-900 bg-gradient-to-b from-blue-900 to-gray-900 text-white font-sans p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* --- Header Section --- */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-3xl font-bold text-white">Oceanic Weather Dashboard</h1>
+            <p className="text-gray-400">Real-time maritime conditions</p>
+          </div>
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <button
+              onClick={handleFetchClick}
+              className={`px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 ease-in-out flex items-center justify-center gap-2 w-full sm:w-auto ${
+                isFetching
+                  ? 'bg-red-500 hover:bg-red-600'
+                  : 'bg-teal-500 hover:bg-teal-600'
+              } shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
+            >
+              {isFetching ? 'Stop Fetching' : 'Fetch Location'}
+            </button>
+          </div>
+        </header>
+
+        {/* --- Status & Location Display --- */}
+        <div className="bg-black/20 rounded-lg p-4 mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full ${isFetching ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
+            <span className="font-medium text-gray-300">
+              Status: {isFetching ? 'Actively fetching every 10s' : 'Idle'}
+            </span>
+          </div>
+          <div className="mt-2 sm:mt-0">
+            <p className="text-gray-400">
+              <span className="font-semibold text-gray-200">Location: </span>
+              {location ? `Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}` : 'Awaiting location...'}
+            </p>
+          </div>
+        </div>
+
+        {error && <div className="bg-red-500/20 border border-red-500 text-red-300 rounded-lg p-4 mb-8 text-center">{error}</div>}
+
+        {/* --- Weather Data Grid --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {weatherCards.map(card => (
+            <WeatherCard
+              key={card.id}
+              icon={card.icon}
+              title={card.title}
+              value={card.value}
+              unit={card.unit}
+            />
+          ))}
+          <RecommendedSpeedCard
+            speed={weatherData?.recommendedSpeed}
+            reason={weatherData?.recommendationReason}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
