@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Home from "./pagess/Home";
 import Dashboard from "./pagess/Dashboard"; 
 import Forecast from "./pagess/Forecast";
+import Map from "./pagess/Map";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/forecast" element={<Forecast />} />
+            <Route path="/map" element={<Map />} />
           </Routes>
         </main>
       </div>
