@@ -1,63 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from "axios";
+import {
+  Thermometer,
+  Gauge,
+  Droplet,
+  Wind,
+  Compass,
+  CloudRain,
+  Eye,
+  Waves,
+  GaugeCircle 
+} from 'lucide-react';
 
-// --- SVG Icon Components ---
 
-const ThermometerIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
-  </svg>
-);
-
-const GaugeIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" />
-  </svg>
-);
-
-const DropletIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
-  </svg>
-);
-
-const WindIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" /><path d="M9.6 4.6A2 2 0 1 1 11 8H2" /><path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
-  </svg>
-);
-
-const CompassIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-  </svg>
-);
-
-const CloudRainIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M16 14v6" /><path d="M8 14v6" /><path d="M12 16v6" />
-  </svg>
-);
-
-const EyeIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const WavesIcon = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
-  </svg>
-);
-
-const SpeedometerIcon = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M12 12v-4" />
-        <path d="M12 12l3.5-3.5" />
-        <path d="M20.9 12A9 9 0 1 1 3.1 12" />
-    </svg>
-);
 
 // --- Reusable Weather Card Component ---
 const WeatherCard = ({ icon, title, value, unit, description }) => (
@@ -82,7 +37,7 @@ const WeatherCard = ({ icon, title, value, unit, description }) => (
 const RecommendedSpeedCard = ({ speed, reason }) => (
   <div className="bg-gradient-to-br from-teal-400/20 to-blue-500/20 backdrop-blur-lg rounded-2xl p-6 flex flex-col justify-center items-center text-center ring-1 ring-teal-300/50 transition-all duration-300 hover:ring-teal-300 hover:scale-105 col-span-1 md:col-span-2 lg:col-span-1">
     <div className="text-teal-200 mb-4">
-      <SpeedometerIcon className="w-12 h-12" />
+      <GaugeCircle className="w-12 h-12" />
     </div>
     <h3 className="text-lg font-medium text-gray-200 mb-2">Recommended Speed</h3>
     <p className="text-6xl font-bold text-white tracking-tighter">
@@ -181,16 +136,16 @@ export default function Dashboard() {
 
   // --- Weather Cards Config ---
   const weatherCards = [
-    { id: 'temp', icon: <ThermometerIcon className="w-8 h-8"/>, title: 'Temperature', value: weatherData?.temperature, unit: '°C' },
-    { id: 'pressure', icon: <GaugeIcon className="w-8 h-8"/>, title: 'Pressure', value: weatherData?.pressure, unit: 'hPa' },
-    { id: 'humidity', icon: <DropletIcon className="w-8 h-8"/>, title: 'Humidity', value: weatherData?.humidity, unit: '%' },
-    { id: 'windSpeed', icon: <WindIcon className="w-8 h-8"/>, title: 'Wind Speed', value: weatherData?.windSpeed, unit: 'm/s' },
-    { id: 'windDir', icon: <CompassIcon className="w-8 h-8"/>, title: 'Wind Direction', value: weatherData?.windDirection, unit: '°' },
-    { id: 'windGusts', icon: <WindIcon className="w-8 h-8 stroke-red-400"/>, title: 'Wind Gusts', value: weatherData?.windGusts, unit: 'm/s' },
-    { id: 'showers', icon: <CloudRainIcon className="w-8 h-8"/>, title: 'Showers', value: weatherData?.showers, unit: 'mm' },
-    { id: 'visibility', icon: <EyeIcon className="w-8 h-8"/>, title: 'Visibility', value: weatherData?.visibility, unit: 'km' },
-    { id: 'seaTemp', icon: <ThermometerIcon className="w-8 h-8"/>, title: 'Sea Surface Temp', value: weatherData?.seaSurfaceTemp, unit: '°C' },
-    { id: 'waveHeight', icon: <WavesIcon className="w-8 h-8"/>, title: 'Wave Height', value: weatherData?.waveHeight, unit: 'm' },
+    { id: 'temp', icon: <Thermometer className="w-8 h-8"/>, title: 'Temperature', value: weatherData?.temperature, unit: '°C' },
+    { id: 'pressure', icon: <Gauge className="w-8 h-8"/>, title: 'Pressure', value: weatherData?.pressure, unit: 'hPa' },
+    { id: 'humidity', icon: <Droplet className="w-8 h-8"/>, title: 'Humidity', value: weatherData?.humidity, unit: '%' },
+    { id: 'windSpeed', icon: <Wind className="w-8 h-8"/>, title: 'Wind Speed', value: weatherData?.windSpeed, unit: 'm/s' },
+    { id: 'windDir', icon: <Compass className="w-8 h-8"/>, title: 'Wind Direction', value: weatherData?.windDirection, unit: '°' },
+    { id: 'windGusts', icon: <Wind className="w-8 h-8 stroke-red-400"/>, title: 'Wind Gusts', value: weatherData?.windGusts, unit: 'm/s' },
+    { id: 'showers', icon: <CloudRain className="w-8 h-8"/>, title: 'Showers', value: weatherData?.showers, unit: 'mm' },
+    { id: 'visibility', icon: <Eye className="w-8 h-8"/>, title: 'Visibility', value: weatherData?.visibility, unit: 'km' },
+    { id: 'seaTemp', icon: <Thermometer className="w-8 h-8"/>, title: 'Sea Surface Temp', value: weatherData?.seaSurfaceTemp, unit: '°C' },
+    { id: 'waveHeight', icon: <Waves className="w-8 h-8"/>, title: 'Wave Height', value: weatherData?.waveHeight, unit: 'm' },
   ];
 
   return (
