@@ -16,25 +16,25 @@ const ForecastCard = ({ date, tempMin, tempMax, precipitation, windSpeed }) => {
   const formattedDate = new Date(date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
 
   return (
-    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex flex-col transition-all duration-300 hover:bg-white/20 hover:scale-105 text-gray-300">
+    <div className="bg-slate-600/30 backdrop-blur-md rounded-2xl p-5 flex flex-col transition-all duration-300 hover:bg-slate-600/50 hover:scale-105 text-slate-300 ring-1 ring-white/10">
       <div className="text-center mb-4">
         <p className="text-lg font-bold text-white">{day}</p>
-        <p className="text-sm text-gray-400">{formattedDate}</p>
+        <p className="text-sm text-slate-400">{formattedDate}</p>
       </div>
       <div className="flex-grow space-y-3 text-sm">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2"><Thermometer className="w-4 h-4 text-teal-400" /> Temp</span>
+          <span className="flex items-center gap-2"><Thermometer className="w-4 h-4 text-sky-400" /> Temp</span>
           <div className="font-semibold text-white flex items-center gap-2">
             <span className="flex items-center text-blue-300"><ArrowDown className="w-3 h-3"/>{tempMin ?? '--'}°</span>
             <span className="flex items-center text-red-300"><ArrowUp className="w-3 h-3"/>{tempMax ?? '--'}°</span>
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2"><CloudRain className="w-4 h-4 text-teal-400" /> Precip.</span>
+          <span className="flex items-center gap-2"><CloudRain className="w-4 h-4 text-sky-400" /> Precip.</span>
           <span className="font-semibold text-white">{precipitation ?? '--'} mm</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-teal-400" /> Wind</span>
+          <span className="flex items-center gap-2"><Wind className="w-4 h-4 text-sky-400" /> Wind</span>
           <span className="font-semibold text-white">{windSpeed ?? '--'} m/s</span>
         </div>
       </div>
@@ -112,18 +112,18 @@ export default function Forecast() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 bg-gradient-to-b from-blue-900 to-gray-900 text-white font-sans p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen w-full bg-gray-900 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 text-white font-sans p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* --- Header Section --- */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold text-white">10-Day Marine Forecast</h1>
-            <p className="text-gray-400">Extended maritime conditions</p>
+            <p className="text-slate-400">Extended maritime conditions</p>
           </div>
           <button
             onClick={handleFetchClick}
             className={`px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 ease-in-out flex items-center justify-center gap-2 w-full sm:w-auto ${
-              isFetching ? 'bg-red-500 hover:bg-red-600' : 'bg-teal-500 hover:bg-teal-600'
+              isFetching ? 'bg-red-500 hover:bg-red-600' : 'bg-sky-600 hover:bg-sky-500'
             } shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
           >
             {isFetching ? 'Stop Fetching' : 'Fetch Location'}
@@ -131,16 +131,16 @@ export default function Forecast() {
         </header>
 
         {/* --- Location & Timezone Display --- */}
-        <div className="bg-black/20 rounded-lg p-4 mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+        <div className="bg-slate-900/50 rounded-lg p-4 mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${isFetching ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-            <span className="font-medium text-gray-300">
+            <span className="font-medium text-slate-300">
               Status: {isFetching ? 'Actively fetching every 3 hour' : 'Idle'}
             </span>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-gray-400">
-              <span className="flex items-center justify-center gap-2"><MapPin className="w-4 h-4 text-teal-400"/> {location ? `Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}` : 'No location'}</span>
-              <span className="flex items-center justify-center gap-2"><Clock className="w-4 h-4 text-teal-400"/> Timezone: {forecastData?.location?.timezone ?? '--'}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-slate-400">
+              <span className="flex items-center justify-center gap-2"><MapPin className="w-4 h-4 text-sky-400"/> {location ? `Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}` : 'No location'}</span>
+              <span className="flex items-center justify-center gap-2"><Clock className="w-4 h-4 text-sky-400"/> Timezone: {forecastData?.location?.timezone ?? '--'}</span>
           </div>
         </div>
 

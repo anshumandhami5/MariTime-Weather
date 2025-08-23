@@ -47,12 +47,12 @@ export default function MapPage() {
   };
 
   return (
-    <div className="h-screen w-full bg-gray-900 bg-gradient-to-b from-blue-900 to-gray-900 text-white font-sans flex flex-col">
+    <div className="h-screen w-full bg-gray-900 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 text-white font-sans flex flex-col">
       {/* --- Header & Controls Section --- */}
       <div className="flex-shrink-0">
         <header className="p-4 text-center">
           <h1 className="text-3xl font-bold text-white">Global Marine Map</h1>
-          <p className="text-gray-400">Visualize your position on the world's oceans</p>
+          <p className="text-slate-400">Visualize your position on the world's oceans</p>
         </header>
         
         <div className="px-4 pb-4 space-y-4 max-w-7xl mx-auto w-full">
@@ -60,7 +60,7 @@ export default function MapPage() {
               <button
                 onClick={fetchLocation}
                 disabled={isFetching}
-                className="px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 ease-in-out flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-600 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                className="px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 ease-in-out flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
                 <MapPin className="w-5 h-5" />
                 {isFetching ? 'Fetching...' : 'Get Current Location'}
@@ -80,7 +80,7 @@ export default function MapPage() {
         <MapContainer 
             center={[20, 0]} 
             zoom={2} 
-            className="h-full w-full rounded-lg border border-teal-500/20 shadow-2xl"
+            className="h-full w-full rounded-lg border border-sky-500/20 shadow-2xl"
             scrollWheelZoom={true}
         >
           <ChangeView center={currentLocation ? [currentLocation.lat, currentLocation.lng] : null} zoom={13} />

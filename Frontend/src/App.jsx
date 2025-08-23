@@ -10,7 +10,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-blue-100">
         <Header />
-        <main className="flex-1 p-6">
+        <main >
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />

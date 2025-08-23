@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900 bg-gradient-to-b from-blue-900 to-gray-900 text-white">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gray-900 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 text-white">
     
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black opacity-50"></div>
@@ -13,10 +13,10 @@ export default function Home() {
 
       {/* Hero Content */}
       <div className="relative z-10 text-center max-w-4xl px-6 space-y-8 animate-[fadeIn_1.5s_ease-in-out]">
-        <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight bg-gradient-to-r from-teal-200 via-white to-cyan-300 bg-clip-text text-transparent drop-shadow-xl">
+        <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight bg-gradient-to-r from-sky-300 via-slate-100 to-sky-400 bg-clip-text text-transparent drop-shadow-xl">
           Navigate the Elements with Confidence
         </h1>
-        <p className="text-lg md:text-xl text-blue-200 font-light max-w-2xl mx-auto drop-shadow-lg">
+        <p className="text-lg md:text-xl text-slate-300 font-light max-w-2xl mx-auto drop-shadow-lg">
           Precision forecasts and intelligent insights for every voyage. Your compass in the digital sea, providing real-time maritime conditions at your fingertips.
         </p>
 
@@ -24,16 +24,16 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row justify-center items-center gap-6 pt-4">
           <Link
             to="/dashboard"
-            className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-teal-500 rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl w-full sm:w-auto"
+            className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-sky-600 rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-2xl w-full sm:w-auto"
           >
-            <span className="absolute h-0 w-0 rounded-full bg-teal-400 transition-all duration-500 ease-out group-hover:h-56 group-hover:w-56"></span>
+            <span className="absolute h-0 w-0 rounded-full bg-sky-500 transition-all duration-500 ease-out group-hover:h-56 group-hover:w-56"></span>
             <span className="relative flex items-center gap-2">
               Launch Dashboard <ArrowRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-1" />
             </span>
           </Link>
           <Link
             to="/chatbot"
-            className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-teal-300 bg-transparent border-2 border-teal-400 rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:bg-teal-400/20 hover:text-white w-full sm:w-auto"
+            className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-sky-300 bg-transparent border-2 border-sky-500 rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:bg-sky-500/20 hover:text-white w-full sm:w-auto"
           >
             <span className="relative">Ask Our AI Assistant</span>
           </Link>

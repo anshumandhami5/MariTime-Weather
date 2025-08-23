@@ -16,35 +16,35 @@ import {
 
 // --- Reusable Weather Card Component ---
 const WeatherCard = ({ icon, title, value, unit, description }) => (
-  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 hover:bg-white/20 hover:scale-105">
+  <div className="bg-slate-600/30 backdrop-blur-md rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 hover:bg-slate-600/50 hover:scale-105 ring-1 ring-white/10">
     <div>
       <div className="flex items-center gap-4">
-        <div className="text-teal-300">{icon}</div>
-        <h3 className="text-lg font-medium text-gray-200">{title}</h3>
+        <div className="text-sky-400">{icon}</div>
+        <h3 className="text-lg font-medium text-slate-200">{title}</h3>
       </div>
       <div className="mt-4 text-center">
         <p className="text-5xl font-bold text-white tracking-tighter">
           {value ?? "--"}
-          <span className="text-2xl font-light text-gray-300 ml-2">{unit}</span>
+          <span className="text-2xl font-light text-slate-300 ml-2">{unit}</span>
         </p>
       </div>
     </div>
-    {description && <p className="text-center text-sm text-gray-400 mt-4">{description}</p>}
+    {description && <p className="text-center text-sm text-slate-400 mt-4">{description}</p>}
   </div>
 );
 
 // --- Special Card for Recommended Speed ---
 const RecommendedSpeedCard = ({ speed, reason }) => (
-  <div className="bg-gradient-to-br from-teal-400/20 to-blue-500/20 backdrop-blur-lg rounded-2xl p-6 flex flex-col justify-center items-center text-center ring-1 ring-teal-300/50 transition-all duration-300 hover:ring-teal-300 hover:scale-105 col-span-1 md:col-span-2 lg:col-span-1">
-    <div className="text-teal-200 mb-4">
+  <div className="bg-gradient-to-br from-sky-600/30 to-blue-700/20 backdrop-blur-lg rounded-2xl p-6 flex flex-col justify-center items-center text-center ring-1 ring-sky-400/50 transition-all duration-300 hover:ring-sky-400 hover:scale-105 col-span-1 md:col-span-2 lg:col-span-1">
+    <div className="text-sky-400 mb-4">
       <GaugeCircle className="w-12 h-12" />
     </div>
-    <h3 className="text-lg font-medium text-gray-200 mb-2">Recommended Speed</h3>
+    <h3 className="text-lg font-medium text-slate-200 mb-2">Recommended Speed</h3>
     <p className="text-6xl font-bold text-white tracking-tighter">
       {speed ?? "--"}
-      <span className="text-2xl font-light text-gray-300 ml-2">knots</span>
+      <span className="text-2xl font-light text-slate-300 ml-2">knots</span>
     </p>
-    <p className="text-sm text-gray-400 mt-4">{reason ?? "Optimal conditions for travel."}</p>
+    <p className="text-sm text-slate-400 mt-4">{reason ?? "Optimal conditions for travel."}</p>
   </div>
 );
 
@@ -149,21 +149,21 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-gray-900 bg-gradient-to-b from-blue-900 to-gray-900 text-white font-sans p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen w-full bg-gray-900 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white font-sans p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         {/* --- Header Section --- */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold text-white">Oceanic Weather Dashboard</h1>
-            <p className="text-gray-400">Real-time maritime conditions</p>
+            <p className="text-slate-400">Real-time maritime conditions</p>
           </div>
           <div className="flex items-center gap-4 w-full sm:w-auto">
             <button
               onClick={handleFetchClick}
               className={`px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300 ease-in-out flex items-center justify-center gap-2 w-full sm:w-auto ${
                 isFetching
-                  ? 'bg-red-500 hover:bg-red-600'
-                  : 'bg-teal-500 hover:bg-teal-600'
+                  ? 'bg-red-400 hover:bg-red-500'
+                  : 'bg-sky-500 hover:bg-sky-600'
               } shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
             >
               {isFetching ? 'Stop Fetching' : 'Fetch Location'}
@@ -172,16 +172,16 @@ export default function Dashboard() {
         </header>
 
         {/* --- Status & Location Display --- */}
-        <div className="bg-black/20 rounded-lg p-4 mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+        <div className="bg-slate-900/50 rounded-lg p-4 mb-8 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${isFetching ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></div>
-            <span className="font-medium text-gray-300">
+            <span className="font-medium text-slate-300">
               Status: {isFetching ? 'Actively fetching every 10s' : 'Idle'}
             </span>
           </div>
           <div className="mt-2 sm:mt-0">
-            <p className="text-gray-400">
-              <span className="font-semibold text-gray-200">Location: </span>
+            <p className="text-slate-400">
+              <span className="font-semibold text-slate-200">Location: </span>
               {location ? `Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}` : 'Awaiting location...'}
             </p>
           </div>
