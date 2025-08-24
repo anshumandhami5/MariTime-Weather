@@ -74,7 +74,7 @@ function mlInputFilter(features) {
     pressure: features.pressure,
     wind_speed: features.wind_speed,
     wave_height: features.wave_height,
-    wind_gusts: features.wind_gusts,
+    sea_surface_temp: features.sea_surface_temp,
     visibility: features.visibility,
   };
 }
@@ -134,10 +134,11 @@ app.post("/get-data", async (req, res) => {
 
       if (needNewPrediction) {
         try {
-          const mlRes = await axios.post("http://localhost:5000/predict", {
+          const mlRes = await axios.post(`${process.env.ML_SERVICE_URL}/predict`, {
             features: mlInputFilter(features),
           });
-          recommended_speed = mlRes.data.prediction;
+          recommended_speed = mlRes.data.predicted_ship_speed_knots;
+          console.warn("ML prediction successful");
         } catch (mlErr) {
           console.warn("⚠️ ML service not available, continuing without prediction");
           recommended_speed = null;
