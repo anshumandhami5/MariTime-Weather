@@ -11,6 +11,7 @@ export default function Header() {
     { name: "Dashboard", path: "/dashboard" },
     { name: "Forecast", path: "/forecast" },
     { name: "Map", path: "/map" },
+    { name: "Simulation", path: "/simulation" },
     { name: "AI Assistant", path: "/chatbot" },
   ];
 
