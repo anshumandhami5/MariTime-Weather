@@ -232,8 +232,8 @@ app.get("/api/location/weather", async (req, res) => {
     }
 
     // 2️⃣ Fetch Wind + Currents from Meteomatics
-    const username = process.env.METEOMATICS_USER;      // e.g. demo@meteomatics.com
-    const password = process.env.METEOMATICS_PASS;      // your API password
+    const username = process.env.METEOMATICS_USER_ONE;      // e.g. demo@meteomatics.com
+    const password = process.env.METEOMATICS_PASS_ONE;      // your API password
     const isoTime = time ? time : new Date().toISOString().slice(0, 13) + ":00:00Z";
     
 
@@ -325,7 +325,7 @@ function headingDeg([lat1, lon1], [lat2, lon2]){
  */
 async function fetchWeatherForPoint(lat, lon, timeISO) {
   try {
-    const url = `${process.env.BACKEND_INTERNAL_URL || `http://localhost:${process.envPORT}`}/api/location/weather?lat=${lat}&lon=${lon}${timeISO ? `&time=${encodeURIComponent(timeISO)}` : ''}`;
+    const url = `${process.env.BACKEND_INTERNAL_URL || `http://localhost:${process.env.PORT}`}/api/location/weather?lat=${lat}&lon=${lon}${timeISO ? `&time=${encodeURIComponent(timeISO)}` : ''}`;
     const r = await axios.get(url);
     return r.data;
   } catch (err) {
@@ -390,32 +390,14 @@ function computePenalties({hst_m, waveDirDeg, windSpeedKn, windDirDeg, headingDe
   return { wavePenalty, windPenalty, totalPenalty: wavePenalty + windPenalty };
 }
 
-/**
- * POST /api/route/simulate
- * Body:
- * {
- *   "waypoints": [[lat,lon], [lat,lon], ...],
- *   "startTime": "2025-09-01T00:00:00Z",
- *   "stw": 12,              // commanded Speed Through Water (kn)
- *   "vessel": { "a_wave": 0.05, "a_wind": 0.0006 }, // optional
- *   "laycan": { "start": "2025-09-20T00:00:00Z", "end": "2025-09-22T00:00:00Z" } // optional
- * }
- *
- * Response:
- * {
- *   legs: [ { from, to, distance_nm, heading_deg, weather_at_arrival, stw, stw_effective, c_parallel, sog, leg_hours, arrivalTime }, ... ],
- *   total: { distance_nm, voyage_hours, eta, laycanRisk: {...} }
- * }
- */
-// --- All your helper functions (haversineNM, headingDeg, etc.) should be here ---
-// ... (previous helper functions from the first code block)
+
 
 // --- The complete, updated API endpoint ---
 app.post("/api/route/simulate", async (req, res) => {
   try {
     // 1. DESTRUCTURE NEW INPUTS: Now includes 'costs' and expanded 'vessel' object
-    const { waypoints, startTime, stw = 12, vessel = {}, costs = {}, laycan } = req.body;
-    
+    const { waypoints, startTime, stw = 12, vessel = {}, costs = {}, laycan , speedAdjustments } = req.body;
+
     if (!Array.isArray(waypoints) || waypoints.length < 2) {
       return res.status(400).json({ error: "waypoints must be an array with at least 2 points" });
     }
@@ -452,12 +434,19 @@ app.post("/api/route/simulate", async (req, res) => {
 
     // --- SIMULATION LOOP ---
     for (let i = 0; i < waypoints.length - 1; i++) {
+      let legStw = stw;
+      if (speedAdjustments && Array.isArray(speedAdjustments)) {
+        const adjustment = speedAdjustments.find(adj => adj.legIndex === i);
+        if (adjustment) {
+          legStw = adjustment.newStw;
+        }
+      }
       const from = waypoints[i];
       const to = waypoints[i+1];
       const distance_nm = haversineNM(from, to);
       const heading_deg = headingDeg(from, to);
-      
-      const naiveHours = distance_nm / Math.max(0.1, stw);
+
+      const naiveHours = distance_nm / Math.max(0.1, legStw);
       const forecastTime = new Date(currentTime.getTime() + naiveHours * 3600 * 1000).toISOString();
       
       const w = await fetchWeatherForPoint(to[0], to[1], forecastTime);
@@ -473,7 +462,7 @@ app.post("/api/route/simulate", async (req, res) => {
         hst_m: waveHs, waveDirDeg: waveDir, windSpeedKn, windDirDeg, headingDeg: heading_deg
       }, vesselCoeffs);
 
-      const stw_effective = Math.max(0.1, stw - penalties.totalPenalty);
+      const stw_effective = Math.max(0.1, legStw - penalties.totalPenalty);
       const c_parallel = currentAlongHeading(curSpeed, curDir, heading_deg);
       const sog = Math.max(0.1, stw_effective + c_parallel);
       const leg_hours = distance_nm / sog;
@@ -487,28 +476,20 @@ app.post("/api/route/simulate", async (req, res) => {
       const arrivalTime = new Date(currentTime.getTime() + leg_hours * 3600 * 1000).toISOString();
 
       legs.push({
-        index: i,
-        from, to,
+        index: i, from, to,
         distance_nm: Number(distance_nm.toFixed(2)),
-        heading_deg: Number(heading_deg.toFixed(2)),
-        weather_at_arrival: {
-          time: w.time,
-          wind: { speed_kn: windSpeedKn, dir_deg: windDirDeg },
-          waves: { height_m: waveHs, dir_deg: waveDir },
-          current: { speed_kn: curSpeed, dir_deg: curDir }
-        },
-        stw_commanded: stw,
+        // OPTIMIZATION FEATURE: We store the actual speed commanded for this leg, which could be the adjusted speed.
+        stw_commanded: legStw,
         stw_effective: Number(stw_effective.toFixed(2)),
-        penalties: {
-          wave: Number(penalties.wavePenalty.toFixed(3)),
-          wind: Number(penalties.windPenalty.toFixed(3))
-        },
-        c_parallel: Number((c_parallel ?? 0).toFixed(3)),
         sog: Number(sog.toFixed(2)),
         leg_hours: Number(leg_hours.toFixed(2)),
         arrivalTime,
-        // ADDED: Fuel consumption for the leg
         fuel_consumption_mt: Number(leg_fuel_mt.toFixed(3)),
+        penalties: {
+            wave: Number(penalties.wavePenalty.toFixed(3)),
+            wind: Number(penalties.windPenalty.toFixed(3))
+        },
+        c_parallel: Number(c_parallel.toFixed(3)),
       });
 
       // --- PROGRESS SIMULATION STATE ---
@@ -528,7 +509,14 @@ app.post("/api/route/simulate", async (req, res) => {
     const eta = new Date(new Date(startTime || Date.now()).getTime() + totalHours * 3600 * 1000).toISOString();
 
     let laycanRisk = null;
-    // ... (Laycan logic remains unchanged)
+    if (laycan && laycan.start && laycan.end){
+      const layStart = new Date(laycan.start);
+      const layEnd = new Date(laycan.end);
+      const etaDate = new Date(eta);
+      if (etaDate < layStart) laycanRisk = { status: "early", diffHours: (layStart - etaDate)/3600000 };
+      else if (etaDate <= layEnd) laycanRisk = { status: "on_time", diffHours: 0 };
+      else laycanRisk = { status: "late", diffHours: (etaDate - layEnd)/3600000 };
+    }
 
     // --- FINAL RESPONSE OBJECT ---
     res.json({
