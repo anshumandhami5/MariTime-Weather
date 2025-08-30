@@ -204,4 +204,82 @@ app.post("/forecast", async (req, res) => {
   }
 });
 
+app.get("/api/location/weather", async (req, res) => {
+  let { lat, lon, time } = req.query;
+
+  // Convert to numbers
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lon);
+
+  // Validate
+  if (isNaN(latitude) || isNaN(longitude)) {
+    return res.status(400).json({ error: "Invalid lat/lon provided" });
+  }
+
+  try {
+    // 1️⃣ Get Waves from Open-Meteo Marine (no wind here)
+    const omUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${latitude}&longitude=${longitude}&hourly=wave_height,wave_direction,wave_period&timezone=UTC`;
+    console.log("🌊 Fetching Open-Meteo:", omUrl);
+
+    const openMeteoRes = await axios.get(omUrl);
+    const omData = openMeteoRes.data;
+
+    // Pick closest hour (or 0 if no time given)
+    let idx = 0;
+    if (time && omData.hourly?.time) {
+      idx = omData.hourly.time.findIndex((t) => t.startsWith(time.slice(0, 13)));
+      if (idx === -1) idx = 0;
+    }
+
+    // 2️⃣ Get Wind + Currents from StormGlass
+    let windSpeed = null;
+    let windDirection = null;
+    let currentSpeed = null;
+    let currentDirection = null;
+
+    try {
+      const sgUrl = `https://api.stormglass.io/v2/weather/point?lat=${latitude}&lng=${longitude}&params=windSpeed,windDirection,currentSpeed,currentDirection`;
+      console.log("🌍 Fetching StormGlass:", sgUrl);
+
+      const stormRes = await axios.get(sgUrl, {
+        headers: { Authorization: process.env.STORMGLASS_API_KEY }
+      });
+
+      const sgData = stormRes.data.hours[0]; // first hour forecast
+
+      // StormGlass returns wind in m/s → convert to knots (1 m/s = 1.94384 kn)
+      windSpeed = sgData?.windSpeed?.sg ? (sgData.windSpeed.sg * 1.94384).toFixed(2) : null;
+      windDirection = sgData?.windDirection?.sg ?? null;
+
+      currentSpeed = sgData?.currentSpeed?.sg ? (sgData.currentSpeed.sg * 1.94384).toFixed(2) : null;
+      currentDirection = sgData?.currentDirection?.sg ?? null;
+    } catch (stormErr) {
+      console.warn("⚠️ StormGlass fetch failed:", stormErr.response?.data || stormErr.message);
+    }
+
+    // 3️⃣ Build final response
+    const weather = {
+      time: omData.hourly.time[idx],
+      wind: {
+        speed_kn: windSpeed ?? null,
+        dir_deg: windDirection ?? null
+      },
+      waves: {
+        height_m: omData.hourly.wave_height[idx] ?? null,
+        dir_deg: omData.hourly.wave_direction[idx] ?? null,
+        period_s: omData.hourly.wave_period[idx] ?? null
+      },
+      current: {
+        speed_kn: currentSpeed ?? null,
+        dir_deg: currentDirection ?? null
+      }
+    };
+
+    res.json(weather);
+  } catch (err) {
+    console.error("❌ Weather fetch failed completely:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to fetch weather" });
+  }
+});
+
 app.listen(4000, () => console.log("Backend running on port 4000"));

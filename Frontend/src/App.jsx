@@ -14,10 +14,14 @@ export default function App() {
         <main >
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/forecast" element={<Forecast />} />
-            <Route path="/map" element={<Map />} />
-            <Route path="/chatbot" element={<Chatbot />} />
+            <Route path="/dashboard" element={<Dashboard />
+            } />
+            <Route path="/forecast" element={<Forecast />
+            } />
+            <Route path="/map" element={<Map />
+            } />
+            <Route path="/chatbot" element={<Chatbot />
+            } />
           </Routes>
         </main>
       </div>

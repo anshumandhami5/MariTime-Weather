@@ -15,8 +15,10 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.540.0",
     "react": "^19.1.1",
+    "react-activation": "^0.13.4",
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",
+    "react-keep-alive": "^2.5.2",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.8.1",
     "tailwindcss": "^4.1.12"
