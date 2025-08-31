@@ -327,8 +327,8 @@ const LegsTable = ({ legs, title, adjustments = [] }) => {
             return (
                 <tr key={leg.index} className="border-t border-gray-700 hover:bg-slate-700">
                   <td className="p-2">{leg.index + 1}</td>
-                  <td className="p-2">{`${leg.from[0].toFixed(2)}, ${leg.from[1].toFixed(2)}`}</td>
-                  <td className="p-2">{`${leg.to[0].toFixed(2)}, ${leg.to[1].toFixed(2)}`}</td>
+                  <td className="p-2">{`${leg.from[0].toFixed(5)}, ${leg.from[1].toFixed(5)}`}</td>
+                  <td className="p-2">{`${leg.to[0].toFixed(5)}, ${leg.to[1].toFixed(5)}`}</td>
                   <td className="p-2">{leg.distance_nm}</td>
                   <td className="p-2">{leg.stw_commanded}</td>
                   <td className="p-2">{leg.stw_effective}</td>

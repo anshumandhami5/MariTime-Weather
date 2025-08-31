@@ -3,6 +3,7 @@ import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
 import cors from "cors";
+import Bottleneck from "bottleneck";
 
 const app = express();
 app.use(express.json());
@@ -205,15 +206,76 @@ app.post("/forecast", async (req, res) => {
 });
 
 
+// 1️⃣ Meteomatics limiter (max 50 requests/minute)
+const meteomaticsLimiter = new Bottleneck({
+  reservoir: 50, // total tokens per minute
+  reservoirRefreshAmount: 50,
+  reservoirRefreshInterval: 60 * 1000, // 1 min
+  maxConcurrent: 1,
+  minTime: 1200 // ~1.2s gap between requests (extra safety)
+});
+
+// Helper: fetch Meteomatics with rate-limit
+async function fetchMeteomatics(url, username, password) {
+  return meteomaticsLimiter.schedule(() =>
+    axios.get(url, {
+      headers: {
+        Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64")
+      }
+    })
+  );
+}
+
+// simple in-memory cache + rate limit
+const WEATHER_CACHED = new Map(); // key -> { data, timestamp }
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+let requestCount = 0;
+let requestWindowStart = Date.now();
+
 app.get("/api/location/weather", async (req, res) => {
   let { lat, lon, time } = req.query;
 
   // Convert to numbers
-  const latitude = parseFloat(lat);
-  const longitude = parseFloat(lon);
+  const latitude = parseFloat(lat)?.toFixed(5);
+  const longitude = parseFloat(lon)?.toFixed(5);
 
   if (isNaN(latitude) || isNaN(longitude)) {
     return res.status(400).json({ error: "Invalid lat/lon provided" });
+  }
+  
+  
+  // ✅ Normalize time to the nearest hour (so normal/eco/optimized share same key)
+  const isoTime =
+    time && time.length >= 13
+      ? time.slice(0, 13) + ":00:00Z"
+      : new Date().toISOString().slice(0, 13) + ":00:00Z";
+
+  // ✅ Cache key
+  const cacheKey = `${latitude},${longitude},${isoTime}`;
+  const now = Date.now();
+
+  // ✅ Clean expired cache
+  if (WEATHER_CACHED.has(cacheKey)) {
+    const cached = WEATHER_CACHED.get(cacheKey);
+    if (now - cached.timestamp < CACHE_TTL) {
+      console.log("⚡ Serving weather from cache:", cacheKey);
+      return res.json(cached.data);
+    } else {
+      WEATHER_CACHED.delete(cacheKey);
+    }
+  }
+
+   // ✅ Rate limiter (50/min)
+  if (now - requestWindowStart > 60 * 1000) {
+    // reset window
+    requestWindowStart = now;
+    requestCount = 0;
+  }
+  if (requestCount >= 50) {
+    console.warn("🚨 Meteomatics request limit reached (50/min)");
+    return res
+      .status(429)
+      .json({ error: "Rate limit reached: Try again in a minute" });
   }
 
   try {
@@ -226,36 +288,58 @@ app.get("/api/location/weather", async (req, res) => {
 
     // Pick closest hour (or 0 if no time given)
     let idx = 0;
-    if (time && omData.hourly?.time) {
-      idx = omData.hourly.time.findIndex((t) => t.startsWith(time.slice(0, 13)));
-      if (idx === -1) idx = 0;
+    if (!omData.hourly || !omData.hourly.time || omData.hourly.time.length === 0) {
+      console.warn("⚠️ Open-Meteo returned no hourly data for", latitude, longitude);
+      return res.status(500).json({ error: "Open-Meteo returned no data for this location" });
     }
+
+    idx = omData.hourly.time.findIndex(t => t.startsWith(isoTime.slice(0, 13)));
+    if (idx === -1) idx = 0;
+
 
     // 2️⃣ Fetch Wind + Currents from Meteomatics
     const username = process.env.METEOMATICS_USER_ONE;      // e.g. demo@meteomatics.com
     const password = process.env.METEOMATICS_PASS_ONE;      // your API password
-    const isoTime = time ? time : new Date().toISOString().slice(0, 13) + ":00:00Z";
+    
     
 
-    const mmUrl = `https://api.meteomatics.com/${isoTime}/wind_speed_10m:ms,wind_dir_10m:d,ocean_current_speed:ms,ocean_current_direction:d/${latitude},${longitude}/json`;
-    console.log("🌍 Fetching Meteomatics:", mmUrl);
+     // 2️⃣ Fetch Wind safely
+    let windSpeed_kn = null, windDir = null;
+    try {
+      const windUrl = `https://api.meteomatics.com/${isoTime}/wind_speed_10m:ms,wind_dir_10m:d/${latitude},${longitude}/json`;
+      console.log("🌍 Fetching Meteomatics Wind:", windUrl);
 
-    const mmRes = await axios.get(mmUrl, {
-      headers: {
-        Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64")
-      }
-    });
+      const windRes = await fetchMeteomatics(windUrl, username, password);
+      const windData = windRes.data.data;
 
-    const mmData = mmRes.data.data;
-    // Extract values
-    const windSpeed_ms = mmData.find(d => d.parameter === "wind_speed_10m:ms")?.coordinates[0].dates[0].value ?? null;
-    const windDir = mmData.find(d => d.parameter === "wind_dir_10m:d")?.coordinates[0].dates[0].value ?? null;
-    const currentSpeed_ms = mmData.find(d => d.parameter === "ocean_current_speed:ms")?.coordinates[0].dates[0].value ?? null;
-    const currentDir = mmData.find(d => d.parameter === "ocean_current_direction:d")?.coordinates[0].dates[0].value ?? null;
+      const windSpeed_ms =
+        windData.find((d) => d.parameter === "wind_speed_10m:ms")?.coordinates[0].dates[0].value ?? null;
+      windDir =
+        windData.find((d) => d.parameter === "wind_dir_10m:d")?.coordinates[0].dates[0].value ?? null;
 
-    // Convert m/s → knots (1 m/s = 1.94384 kn)
-    const windSpeed_kn = windSpeed_ms ? (windSpeed_ms * 1.94384).toFixed(2) : null;
-    const currentSpeed_kn = currentSpeed_ms ? (currentSpeed_ms * 1.94384).toFixed(2) : null;
+      windSpeed_kn = windSpeed_ms ? (windSpeed_ms * 1.94384).toFixed(2) : null;
+    } catch (err) {
+      console.warn("⚠️ Meteomatics wind fetch failed:", err.message);
+    }
+
+    // 3️⃣ Fetch Currents safely
+    let currentSpeed_kn = null, currentDir = null;
+    try {
+      const currentUrl = `https://api.meteomatics.com/${isoTime}/ocean_current_speed:ms,ocean_current_direction:d/${latitude},${longitude}/json`;
+      console.log("🌊 Fetching Meteomatics Current:", currentUrl);
+
+      const currentRes = await fetchMeteomatics(currentUrl, username, password);
+      const currentData = currentRes.data.data;
+
+      const currentSpeed_ms =
+        currentData.find((d) => d.parameter === "ocean_current_speed:ms")?.coordinates[0].dates[0].value ?? null;
+      currentDir =
+        currentData.find((d) => d.parameter === "ocean_current_direction:d")?.coordinates[0].dates[0].value ?? null;
+
+      currentSpeed_kn = currentSpeed_ms ? (currentSpeed_ms * 1.94384).toFixed(2) : null;
+    } catch (err) {
+      console.warn("⚠️ Meteomatics current not available, fallback to null");
+    }
 
     // 3️⃣ Build final response
     const weather = {
@@ -274,7 +358,8 @@ app.get("/api/location/weather", async (req, res) => {
         dir_deg: currentDir
       }
     };
-
+    WEATHER_CACHED.set(cacheKey, { data: weather, timestamp: now });
+    requestCount++;
     res.json(weather);
   } catch (err) {
     console.error("❌ Weather fetch failed:", err.response?.data || err.message);
@@ -323,10 +408,31 @@ function headingDeg([lat1, lon1], [lat2, lon2]){
  * It calls your /api/location/weather endpoint on same server (no network cost)
  * You can replace with direct function to Open-Meteo/StormGlass if preferred.
  */
+
+// helper to snap & clamp forecast time for Open-Meteo horizon
+function snapForecastTime(requestedTimeISO, stepHours = 1, maxDays = 16) {
+  if (!requestedTimeISO) return null;
+
+  const req = new Date(requestedTimeISO);
+  const now = new Date();
+
+  // clamp to max horizon
+  const maxHorizon = new Date(now.getTime() + maxDays * 24 * 3600 * 1000);
+  if (req > maxHorizon) return maxHorizon.toISOString();
+
+  // snap to nearest hour (or stepHours if you later need 3h)
+  const hours = Math.round(req.getUTCHours() / stepHours) * stepHours;
+  req.setUTCHours(hours, 0, 0, 0);
+
+  return req.toISOString();
+}
+
 async function fetchWeatherForPoint(lat, lon, timeISO) {
   try {
-    const url = `${process.env.BACKEND_INTERNAL_URL || `http://localhost:${process.env.PORT}`}/api/location/weather?lat=${lat}&lon=${lon}${timeISO ? `&time=${encodeURIComponent(timeISO)}` : ''}`;
-    const r = await axios.get(url);
+    const safeTime = timeISO ? snapForecastTime(timeISO, 1, 16) : null;
+    const url = `${process.env.BACKEND_INTERNAL_URL || `http://localhost:${process.env.PORT}`}/api/location/weather?lat=${lat}&lon=${lon}${safeTime ? `&time=${encodeURIComponent(safeTime)}` : ''}`;
+
+    const r = await axios.get(url, { timeout: 10000 });
     return r.data;
   } catch (err) {
     console.warn("fetchWeatherForPoint failed:", err.response?.data || err.message);
@@ -543,8 +649,6 @@ app.post("/api/route/simulate", async (req, res) => {
     res.status(500).json({ error: "Route simulation failed" });
   }
 });
-
-
 
 
 app.listen(4000, () => console.log("Backend running on port 4000"));
