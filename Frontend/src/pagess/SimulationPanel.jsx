@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-// --- Helper function to format numbers with commas ---
 const formatNumber = (num) => {
   if (typeof num !== 'number') return num;
   return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
-// --- Helper function to format date for input fields ---
 const formatDateForInput = (date) => {
     const d = new Date(date);
     const year = d.getUTCFullYear();
@@ -17,12 +15,10 @@ const formatDateForInput = (date) => {
 
 
 function SimulationPanel() {
-  // State for route data
   const [routes, setRoutes] = useState([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
   const [error, setError] = useState(null);
 
-  // State for user-configurable inputs
   const [stw, setStw] = useState(14);
   const [ecoStw, setEcoStw] = useState(12.5);
   const [vesselParams, setVesselParams] = useState({
@@ -33,7 +29,6 @@ function SimulationPanel() {
     bunker_price_usd_mt: 650,
     co2_price_usd_mt: 90,
   });
-  // NEW: State for laycan inputs
   const [laycan, setLaycan] = useState({
       start: '2025-09-21T00:00:00Z',
       end: '2025-09-22T23:59:59Z'
@@ -42,9 +37,9 @@ function SimulationPanel() {
   // State for simulation results
   const [normalResult, setNormalResult] = useState(null);
   const [ecoResult, setEcoResult] = useState(null);
-  const [optimizedResult, setOptimizedResult] = useState(null); // NEW
+  const [optimizedResult, setOptimizedResult] = useState(null); 
   const [comparison, setComparison] = useState(null);
-  const [speedSuggestion, setSpeedSuggestion] = useState(null); // NEW
+  const [speedSuggestion, setSpeedSuggestion] = useState(null); 
   const [simLoading, setSimLoading] = useState(false);
   const [activeLegsView, setActiveLegsView] = useState('normal');
 
@@ -63,7 +58,6 @@ function SimulationPanel() {
     fetchRoutes();
   }, []);
 
-  // UPDATED: Core simulation function now accepts speedAdjustments
   const runSingleSimulation = async (speed, speedAdjustments = null) => {
     const selectedRoute = routes[selectedRouteIndex];
     const body = {
@@ -72,8 +66,8 @@ function SimulationPanel() {
       stw: speed,
       vessel: { ...vesselParams, a_wave: 0.05, a_wind: 0.0006 },
       costs: costParams,
-      laycan: laycan, // Pass laycan to backend
-      speedAdjustments, // Pass adjustments to backend
+      laycan: laycan, 
+      speedAdjustments, 
     };
     const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/route/simulate`, {
       method: "POST",
@@ -87,7 +81,6 @@ function SimulationPanel() {
     return res.json();
   };
 
-  // UPDATED: Main handler now generates suggestions
   async function handleSimulate() {
     if (!routes.length) return;
     if (ecoStw >= stw) {
@@ -122,7 +115,6 @@ function SimulationPanel() {
       const delayHours = ecoData.total.voyage_hours - normalData.total.voyage_hours;
       setComparison({ fuelSaved, costSaved, delayHours, ecoSpeed });
 
-      // NEW: Generate a speed suggestion if the normal voyage is late
       if (normalData.total.laycanRisk?.status === 'late') {
         let timeToSaveHrs = normalData.total.laycanRisk.diffHours;
         const adjustments = [];
@@ -153,7 +145,6 @@ function SimulationPanel() {
     }
   }
 
-  // NEW: Handler for running the optimized simulation
   async function handleOptimizedSimulate() {
     if (!speedSuggestion) return;
     setSimLoading(true);
@@ -207,7 +198,7 @@ function SimulationPanel() {
         <div><label className="block text-sm text-gray-400">Base Fuel (MT/day)</label><input type="number" name="base_fuel_consumption_mt_day" value={vesselParams.base_fuel_consumption_mt_day} onChange={handleInputChange(setVesselParams)} disabled={simLoading} className="mt-1 w-full bg-gray-700 p-2 rounded" /></div>
         <div><label className="block text-sm text-gray-400">Bunker Price ($/MT)</label><input type="number" name="bunker_price_usd_mt" value={costParams.bunker_price_usd_mt} onChange={handleInputChange(setCostParams)} disabled={simLoading} className="mt-1 w-full bg-gray-700 p-2 rounded" /></div>
 
-        {/* NEW: Laycan Inputs */}
+        {/* Laycan Inputs */}
         <div><label className="block text-sm text-gray-400">Laycan Start</label><input type="date" name="start" value={formatDateForInput(laycan.start)} onChange={handleDateChange} disabled={simLoading} className="mt-1 w-full bg-gray-700 p-2 rounded" /></div>
         <div><label className="block text-sm text-gray-400">Laycan End</label><input type="date" name="end" value={formatDateForInput(laycan.end)} onChange={handleDateChange} disabled={simLoading} className="mt-1 w-full bg-gray-700 p-2 rounded" /></div>
       </div>
@@ -216,12 +207,12 @@ function SimulationPanel() {
 
       {error && <div className="text-red-400 bg-red-900 p-3 rounded mt-4 text-center">Error: {error}</div>}
       
-      {/* NEW: Display Laycan Analysis and Suggestion */}
+      {/* Display Laycan Analysis and Suggestion */}
       {normalResult && <LaycanAnalysis result={normalResult} suggestion={speedSuggestion} onOptimize={handleOptimizedSimulate} loading={simLoading} />}
       
       {comparison && (<div className="p-4 bg-green-900 bg-opacity-50 rounded-lg text-center"><h3 className="text-xl font-bold text-green-300">Eco Speed Comparison</h3><p className="text-lg mt-2">Slowing to <strong>{comparison.ecoSpeed.toFixed(1)} kn</strong> saves <strong>{formatNumber(comparison.fuelSaved)} MT</strong> (${formatNumber(comparison.costSaved)}) but delays ETA by <strong>{(comparison.delayHours / 24).toFixed(1)} days</strong>.</p></div>)}
 
-      {/* UPDATED: Grid now accommodates three results */}
+      {/* Grid now accommodates three results */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
         {normalResult && <ResultCard title={`Normal Speed (${stw} kn)`} result={normalResult} />}
         {ecoResult && <ResultCard title={`Eco Speed (${ecoStw} kn)`} result={ecoResult} />}
@@ -257,7 +248,7 @@ function SimulationPanel() {
   );
 }
 
-// --- NEW/UPDATED HELPER COMPONENTS ---
+
 const LaycanAnalysis = ({ result, suggestion, onOptimize, loading }) => {
   if (!result.total.laycanRisk) return null;
   const { status, diffHours } = result.total.laycanRisk;
@@ -272,7 +263,6 @@ const LaycanAnalysis = ({ result, suggestion, onOptimize, loading }) => {
       <h3 className="text-xl font-bold">Laycan Risk Analysis</h3>
       <p className="text-lg mt-2">{message}</p>
       
-      {/* --- This check now correctly looks for the 'adjustments' array in the suggestion object. --- */}
       {suggestion?.adjustments?.length > 0 && status === 'late' && (
         <div className="mt-3">
           <p><b>Suggestion:</b> An optimized plan has been calculated. See the "Optimized Legs" tab for details.</p>

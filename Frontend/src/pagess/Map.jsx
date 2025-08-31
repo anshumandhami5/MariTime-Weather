@@ -13,7 +13,7 @@ import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
 import routesData from "/routes.json";
 
-// --- Helper to change map view ---
+
 function ChangeView({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function MapPage() {
       if (forOverlay) {
         setOverlayData((prev) => ({
           ...prev,
-          [`${lat}_${lon}`]: normalized,   // FIXED: no rounding
+          [`${lat}_${lon}`]: normalized,   
         }));
       } else {
         setSelectedWeather(normalized);
@@ -248,7 +248,7 @@ export default function MapPage() {
           {showOverlay && (
             <LayerGroup>
               {route2.waypoints.map(([lat, lon]) => {
-                const key = `${lat}_${lon}`;   // FIXED: matches stored key
+                const key = `${lat}_${lon}`;   
                 const w = overlayData[key];
                 if (!w) return null;
                 return (

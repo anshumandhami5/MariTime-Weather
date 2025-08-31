@@ -206,13 +206,13 @@ app.post("/forecast", async (req, res) => {
 });
 
 
-// 1️⃣ Meteomatics limiter (max 50 requests/minute)
+// Meteomatics limiter (max 50 requests/minute)
 const meteomaticsLimiter = new Bottleneck({
-  reservoir: 50, // total tokens per minute
+  reservoir: 50, 
   reservoirRefreshAmount: 50,
   reservoirRefreshInterval: 60 * 1000, // 1 min
   maxConcurrent: 1,
-  minTime: 1200 // ~1.2s gap between requests (extra safety)
+  minTime: 1200 // ~1.2s gap between requests 
 });
 
 // Helper: fetch Meteomatics with rate-limit
@@ -226,8 +226,8 @@ async function fetchMeteomatics(url, username, password) {
   );
 }
 
-// simple in-memory cache + rate limit
-const WEATHER_CACHED = new Map(); // key -> { data, timestamp }
+
+const WEATHER_CACHED = new Map(); 
 const CACHE_TTL = 15 * 60 * 1000; // 5 minutes cache
 let requestCount = 0;
 let requestWindowStart = Date.now();
@@ -235,7 +235,6 @@ let requestWindowStart = Date.now();
 app.get("/api/location/weather", async (req, res) => {
   let { lat, lon, time } = req.query;
 
-  // Convert to numbers
   const latitude = parseFloat(lat)?.toFixed(5);
   const longitude = parseFloat(lon)?.toFixed(5);
 
@@ -244,17 +243,17 @@ app.get("/api/location/weather", async (req, res) => {
   }
   
   
-  // ✅ Normalize time to the nearest hour (so normal/eco/optimized share same key)
+  // Normalize time to the nearest hour (so normal/eco/optimized share same key)
   const isoTime =
     time && time.length >= 13
       ? time.slice(0, 13) + ":00:00Z"
       : new Date().toISOString().slice(0, 13) + ":00:00Z";
 
-  // ✅ Cache key
+  // Cache key
   const cacheKey = `${latitude},${longitude},${isoTime}`;
   const now = Date.now();
 
-  // ✅ Clean expired cache
+  // Clean expired cache
   if (WEATHER_CACHED.has(cacheKey)) {
     const cached = WEATHER_CACHED.get(cacheKey);
     if (now - cached.timestamp < CACHE_TTL) {
@@ -265,7 +264,7 @@ app.get("/api/location/weather", async (req, res) => {
     }
   }
 
-   // ✅ Rate limiter (50/min)
+   // Rate limiter (50/min)
   if (now - requestWindowStart > 60 * 1000) {
     // reset window
     requestWindowStart = now;
@@ -279,7 +278,7 @@ app.get("/api/location/weather", async (req, res) => {
   }
 
   try {
-    // 1️⃣ Get Waves from Open-Meteo
+    // Get Waves from Open-Meteo
     const omUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${latitude}&longitude=${longitude}&hourly=wave_height,wave_direction,wave_period&timezone=UTC`;
     console.log("🌊 Fetching Open-Meteo:", omUrl);
 
@@ -297,13 +296,13 @@ app.get("/api/location/weather", async (req, res) => {
     if (idx === -1) idx = 0;
 
 
-    // 2️⃣ Fetch Wind + Currents from Meteomatics
-    const username = process.env.METEOMATICS_USER_ONE;      // e.g. demo@meteomatics.com
-    const password = process.env.METEOMATICS_PASS_ONE;      // your API password
+    // Fetch Wind + Currents from Meteomatics
+    const username = process.env.METEOMATICS_USER_ONE;   
+    const password = process.env.METEOMATICS_PASS_ONE;
     
     
 
-     // 2️⃣ Fetch Wind safely
+     // Fetch Wind safely
     let windSpeed_kn = null, windDir = null;
     try {
       const windUrl = `https://api.meteomatics.com/${isoTime}/wind_speed_10m:ms,wind_dir_10m:d/${latitude},${longitude}/json`;
@@ -322,7 +321,7 @@ app.get("/api/location/weather", async (req, res) => {
       console.warn("⚠️ Meteomatics wind fetch failed:", err.message);
     }
 
-    // 3️⃣ Fetch Currents safely
+    // Fetch Currents safely
     let currentSpeed_kn = null, currentDir = null;
     try {
       const currentUrl = `https://api.meteomatics.com/${isoTime}/ocean_current_speed:ms,ocean_current_direction:d/${latitude},${longitude}/json`;
@@ -341,7 +340,7 @@ app.get("/api/location/weather", async (req, res) => {
       console.warn("⚠️ Meteomatics current not available, fallback to null");
     }
 
-    // 3️⃣ Build final response
+    // Build final response
     const weather = {
       time: omData.hourly.time[idx],
       wind: {
@@ -404,9 +403,8 @@ function headingDeg([lat1, lon1], [lat2, lon2]){
 }
 
 /**
- * helper: fetch weather for one point+time using your existing internal API
- * It calls your /api/location/weather endpoint on same server (no network cost)
- * You can replace with direct function to Open-Meteo/StormGlass if preferred.
+ * helper: fetch weather for one point+time using existing internal API
+ * It calls  /api/location/weather endpoint on same server (no network cost)
  */
 
 // helper to snap & clamp forecast time for Open-Meteo horizon
@@ -436,7 +434,6 @@ async function fetchWeatherForPoint(lat, lon, timeISO) {
     return r.data;
   } catch (err) {
     console.warn("fetchWeatherForPoint failed:", err.response?.data || err.message);
-    // return null-ish safe structure
     return {
       time: timeISO || null,
       wind: { speed_kn: null, dir_deg: null },
@@ -458,7 +455,6 @@ function degToRad(deg){ return deg * Math.PI / 180; }
  * We'll treat both as directions (0 = North, clockwise).
  * The component along heading = current_speed * cos(delta) where delta = angle between current direction and heading but careful with conventions:
  * If current direction means 'direction from which current flows', forward component = -cos(delta)*speed
- * Simpler: assume current.dir_deg is direction TO (as StormGlass returns currentDirection as direction of flow). If it's direction from—swap sign. Check API docs. We'll assume it's direction TO.
  */
 function currentAlongHeading(currentSpeed, currentDirDeg, shipHeadingDeg){
   if (currentSpeed == null || currentDirDeg == null) return 0;
@@ -475,8 +471,8 @@ function currentAlongHeading(currentSpeed, currentDirDeg, shipHeadingDeg){
  * encounterAngle = angle difference between heading and wave direction (deg)
  */
 function computePenalties({hst_m, waveDirDeg, windSpeedKn, windDirDeg, headingDeg}, coeffs){
-  const a_wave = coeffs.a_wave ?? 0.05;   // kn per meter (example)
-  const a_wind = coeffs.a_wind ?? 0.0006; // coefficient for wind squared penalty
+  const a_wave = coeffs.a_wave ?? 0.05;  
+  const a_wind = coeffs.a_wind ?? 0.0006; 
 
   let wavePenalty = 0;
   if (hst_m != null && waveDirDeg != null){
@@ -497,18 +493,14 @@ function computePenalties({hst_m, waveDirDeg, windSpeedKn, windDirDeg, headingDe
 }
 
 
-
-// --- The complete, updated API endpoint ---
 app.post("/api/route/simulate", async (req, res) => {
   try {
-    // 1. DESTRUCTURE NEW INPUTS: Now includes 'costs' and expanded 'vessel' object
     const { waypoints, startTime, stw = 12, vessel = {}, costs = {}, laycan , speedAdjustments } = req.body;
 
     if (!Array.isArray(waypoints) || waypoints.length < 2) {
       return res.status(400).json({ error: "waypoints must be an array with at least 2 points" });
     }
 
-    // --- SETUP CONSTANTS AND DEFAULTS ---
     // Environmental coefficients
     const vesselCoeffs = {
       a_wave: vessel.a_wave ?? 0.05,
@@ -573,8 +565,8 @@ app.post("/api/route/simulate", async (req, res) => {
       const sog = Math.max(0.1, stw_effective + c_parallel);
       const leg_hours = distance_nm / sog;
 
-      // === NEW: FUEL AND COST CALCULATION (NO PLACEHOLDERS) ===
-      // Use the cube law: Consumption = BaseConsumption * (ActualSpeed / DesignSpeed)^3
+      // === FUEL AND COST CALCULATION (NO PLACEHOLDERS) ===
+      // Using the cube law: Consumption = BaseConsumption * (ActualSpeed / DesignSpeed)^3
       const daily_consumption_mt = vesselPerf.base_fuel_mt_day * Math.pow(stw_effective / vesselPerf.design_speed_kn, 3);
       const leg_fuel_mt = (daily_consumption_mt / 24) * leg_hours;
       // =========================================================
@@ -584,7 +576,6 @@ app.post("/api/route/simulate", async (req, res) => {
       legs.push({
         index: i, from, to,
         distance_nm: Number(distance_nm.toFixed(2)),
-        // OPTIMIZATION FEATURE: We store the actual speed commanded for this leg, which could be the adjusted speed.
         stw_commanded: legStw,
         stw_effective: Number(stw_effective.toFixed(2)),
         sog: Number(sog.toFixed(2)),
@@ -602,10 +593,10 @@ app.post("/api/route/simulate", async (req, res) => {
       currentTime = new Date(arrivalTime);
       totalDist += distance_nm;
       totalHours += leg_hours;
-      totalFuelMt += leg_fuel_mt; // Accumulate fuel
+      totalFuelMt += leg_fuel_mt; 
     }
 
-    // === NEW: FINAL TOTAL COST CALCULATIONS ===
+    // === FINAL TOTAL COST CALCULATIONS ===
     const total_fuel_cost_usd = totalFuelMt * marketCosts.bunker_price_usd_mt;
     const total_co2_mt = totalFuelMt * CO2_CONVERSION_FACTOR;
     const total_co2_cost_usd = total_co2_mt * marketCosts.co2_price_usd_mt;
@@ -632,7 +623,7 @@ app.post("/api/route/simulate", async (req, res) => {
         voyage_hours: Number(totalHours.toFixed(2)),
         eta,
         laycanRisk,
-        // ADDED: Fuel and cost summary
+        // Fuel and cost summary
         fuel_consumption_mt: Number(totalFuelMt.toFixed(2)),
         costs: {
             bunker_cost_usd: Number(total_fuel_cost_usd.toFixed(0)),
