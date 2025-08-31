@@ -1,7 +1,7 @@
 # 🚀 Marine Weather Intelligence
 
-An Machine Learning powered Full-Stack Project, with robust backend and clean UI.
-Marine Weather Intelligence provides real-time marine weather, forecasts, optimal vessel speed recommendations, AI assistant and an interactive world map for safer, smarter navigation.
+An Full-Stack Project, with robust backend and clean UI, and a bit of ML (future scope, can be improved)
+Marine Weather Intelligence provides real-time marine weather, forecasts, interactive world map that shows the ship's route with weather conditions for safer, smarter navigation and most important TELLS SHIP SPEED ON THE BASIS OF CURRENT AND WIND SPEED, DIRECTION , ESTIMATED TIME TO REACH THE DESTINATION (KEEPING ACCOUNT OF THE WEATHER), FUEL COST, SPEED AND FUEL COST IN ECO MODE, AND SPEED OPTIMIZATION TO REACH THE DESTINATION ON TIME. With complete data (coordinates, distance betweeen two coordinates, fuel consumption, etc)
 
 ---
 
@@ -9,7 +9,6 @@ Marine Weather Intelligence provides real-time marine weather, forecasts, optima
 
 * **Intuitive User Interface:** A sleek and modern frontend built with **React** and styled with **Tailwind CSS** for an engaging user experience.
 * **Robust Backend API:** A powerful and scalable backend using **Node.js** and **Express** to handle data and business logic.
-* **Seamless ML Integration:** Your machine learning model is directly integrated into the application flow, providing real-time predictions or analysis.
 * **Responsive Design:** Enjoy a consistent experience across all devices, from desktops to mobile phones.
 
 ---
@@ -27,7 +26,7 @@ Marine Weather Intelligence provides real-time marine weather, forecasts, optima
 * **Node.js:** A JavaScript runtime environment that executes server-side code efficiently.
 * **Express:** A minimal and flexible Node.js web application framework that provides robust features for web and mobile applications.
 
-### Machine Learning
+### Machine Learning (Future scope) (not needed currently)
 
 * **Python:** The programming language used for data preparation and model development.
 * **Data Cleaning Script:** Handles preprocessing, normalization, and feature engineering to prepare raw data for model training.
