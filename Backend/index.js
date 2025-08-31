@@ -228,7 +228,7 @@ async function fetchMeteomatics(url, username, password) {
 
 // simple in-memory cache + rate limit
 const WEATHER_CACHED = new Map(); // key -> { data, timestamp }
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_TTL = 15 * 60 * 1000; // 5 minutes cache
 let requestCount = 0;
 let requestWindowStart = Date.now();
 
