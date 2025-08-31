@@ -11,7 +11,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPin } from "lucide-react";
-import routesData from "/routes.json";
+import routesData from "/public/routes.json";
 
 
 function ChangeView({ center, zoom }) {

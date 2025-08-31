@@ -11,9 +11,9 @@ function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-blue-100 font-sans">
+    <div className="w-screen h-screen overflow-x-hidden bg-gradient-to-b from-[#0d1b2a] to-[#1b263b] font-sans text-white flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto p-4 md:p-8 space-y-16">
+      <main className="flex-1 p-4 md:p-8 space-y-16">
         <section id="home"><Home /></section>
         <section id="dashboard"><Dashboard /></section>
         <section id="forecast"><Forecast /></section>
